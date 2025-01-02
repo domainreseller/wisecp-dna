@@ -339,17 +339,6 @@ class DomainNameAPI {
      */
     public function transfer($domain = '', $sld = '', $tld = '', $year = 1, $dns = [], $whois = [], $wprivacy = false, $tcode = '') {
         $this->set_credentials();
-        /*
-
-        validation responsibility assigned to registrar
-
-        $detail = $this->api->GetDetails($domain);
-        if ($detail["result"] == "OK") {
-            $this->error = $domain . " already exists.";
-            return false;
-        }
-        */
-
 
         $response = $this->api->Transfer($domain, $tcode, $year);
 
@@ -654,57 +643,6 @@ class DomainNameAPI {
      */
     public function contactProcess($data = [], $type = 'Contact') {
         $this->set_credentials();
-        /*
-        if (isset($data["registrant"])) {
-            $whois_data = [];
-            foreach ($data as $k => $v) {
-                $whois_data[ucfirst($k)] = [
-                    "FirstName"        => $v["FirstName"],
-                    "LastName"         => $v["LastName"],
-                    "Company"          => $v["Company"],
-                    "EMail"            => $v["EMail"],
-                    "AddressLine1"     => $v["AddressLine1"],
-                    "State"            => $v["State"],
-                    "City"             => $v["City"],
-                    "Country"          => $v["Country"],
-                    "Fax"              => $v["Fax"],
-                    "FaxCountryCode"   => $v["FaxCountryCode"],
-                    "Phone"            => $v["Phone"],
-                    "PhoneCountryCode" => $v["PhoneCountryCode"],
-                    "Type"             => $type,
-                    "ZipCode"          => $v["ZipCode"],
-                    "Status"           => '',
-                ];
-            }
-
-            return $whois_data;
-        } else {
-            $whois_data = [
-                "FirstName"        => $data["FirstName"],
-                "LastName"         => $data["LastName"],
-                "Company"          => $data["Company"],
-                "EMail"            => $data["EMail"],
-                "AddressLine1"     => $data["AddressLine1"],
-                "State"            => $data["State"],
-                "City"             => $data["City"],
-                "Country"          => $data["Country"],
-                "Fax"              => $data["Fax"],
-                "FaxCountryCode"   => $data["FaxCountryCode"],
-                "Phone"            => $data["Phone"],
-                "PhoneCountryCode" => $data["PhoneCountryCode"],
-                "Type"             => $type,
-                "ZipCode"          => $data["ZipCode"],
-                "Status"           => '',
-            ];
-
-            return [
-                "Administrative" => $whois_data,
-                "Billing"        => $whois_data,
-                "Technical"      => $whois_data,
-                "Registrant"     => $whois_data,
-            ];
-        }
-        */
 
         $formatWhoisData = function ($v) {
             $whois_arr= [
