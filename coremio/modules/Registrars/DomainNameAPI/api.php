@@ -11,7 +11,7 @@
  * Class DomainNameAPI_PHPLibrary
  * @package DomainNameApi
  * @version 2.1.3
-
+*/
 
 
 namespace DomainNameApi;
