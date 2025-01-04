@@ -1,8 +1,11 @@
 <?php
+
+use DomainNameApi\DomainNameAPI_PHPLibrary;
+
 /**
  * DomainNameAPI Registrar Module
  * @package    coremio/modules/Registrars/DomainNameAPI
- * @version    1.17.5
+ * @version    1.17.6
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -11,6 +14,7 @@
  */
 
 class DomainNameAPI {
+    /** @var bool|DomainNameAPI_PHPLibrary  */
     public  $api     = false;
     public  $config  = [];
     public  $lang    = [];
@@ -70,10 +74,10 @@ class DomainNameAPI {
      */
     private function set_credentials()
     {
-        if ($this->api instanceof \DomainNameApi\DomainNameAPI_PHPLibrary) {
+        if ($this->api instanceof DomainNameAPI_PHPLibrary) {
             return $this->api;
         }
-        $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($this->username, $this->password);
+        $this->api = new DomainNameAPI_PHPLibrary($this->username, $this->password);
     }
 
 
@@ -91,7 +95,7 @@ class DomainNameAPI {
         $this->config["settings"]["password"]  = $password;
         //$this->config["settings"]["test-mode"] = $tmode;
 
-        $this->api = new \DomainNameApi\DomainNameAPI_PHPLibrary($username, $password);
+        $this->api = new DomainNameAPI_PHPLibrary($username, $password);
     }
 
     /**
