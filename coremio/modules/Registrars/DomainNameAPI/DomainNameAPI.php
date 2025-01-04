@@ -867,7 +867,7 @@ class DomainNameAPI {
 
         if ($currentstatus == "Active") {
             $dns = [];
-
+/*
             if (isset($params["ns1"]) && $params["ns1"]) {
                 $dns[] = $params["ns1"];
             }
@@ -883,7 +883,7 @@ class DomainNameAPI {
 
             $this->ModifyDns(['domain' => $domain], $dns);
             $this->ModifyWhois(['domain' => $domain], $params["whois"]);
-
+*/
 
             $return_data["status"] = "active";
         } elseif ($currentstatus == "Expired") {
