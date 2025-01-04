@@ -663,9 +663,31 @@ class DomainNameAPI {
                 "Status"           => '',
             ];
 
+            if(strlen(trim($whois_arr["FirstName"])) == 0){
+                $whois_arr["FirstName"]= 'Isimyok' ;
+            }
             if(strlen(trim($whois_arr["LastName"])) == 0){
                 $whois_arr["LastName"]= $whois_arr["FirstName"] ;
             }
+            if(strlen(trim($whois_arr["AddressLine1"])) == 0){
+                $whois_arr["AddressLine1"]= 'Addres yok' ;
+            }
+            if(strlen(trim($whois_arr["City"])) == 0){
+                $whois_arr["City"]= 'ISTANBUL' ;
+            }
+            if(strlen(trim($whois_arr["Country"])) == 0){
+                $whois_arr["Country"]= 'TR' ;
+            }
+            if(strlen(trim($whois_arr["ZipCode"])) == 0){
+                $whois_arr["ZipCode"]= '34000' ;
+            }
+            if(strlen(trim($whois_arr["PhoneCountryCode"])) == 0){
+                $whois_arr["PhoneCountryCode"]= '90' ;
+            }
+            if(strlen(trim($whois_arr["Phone"])) == 0){
+                $whois_arr["Phone"]= '5555555555' ;
+            }
+
 
             return $whois_arr;
         };
