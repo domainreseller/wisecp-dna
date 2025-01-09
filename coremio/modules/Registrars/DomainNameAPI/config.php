@@ -3,12 +3,12 @@
 return [
     'meta'     => [
         'name'    => 'DomainNameAPI',
-        'version' => '1.17.6',
+        'version' => '1.17.7',
         'logo'    => 'logo.png',
     ],
     'settings' => [
         'whois-types'      => true,
-        'username'         => 'user',
+        'username'         => 'user.domainnameapi',
         'password'         => '********',
         'test-mode'        => 0,
         'whidden-amount'   => 0,

@@ -132,6 +132,12 @@ $soap_exists = class_exists("SoapClient");
 
             <div class="formcon">
                 <div class="yuzde30"></div>
+                <div class="yuzde70 connection-time" >
+                </div>
+            </div>
+
+            <div class="formcon">
+                <div class="yuzde30"></div>
                 <div class="yuzde70 version-check" >
                 </div>
             </div>
@@ -458,11 +464,12 @@ $soap_exists = class_exists("SoapClient");
   const numofTLDNotSyncedTxtMessage = "<?php echo $LANG['numofTLDNotSyncedTxt'];?>";
   const stillProcessingMessage = "<?php echo $LANG['stillProcessing'];?>";
   const expectedProfitRate = <?php echo Config::get('options/domain-profit-rate') * 1; ?>;
-  const currentVersion = '<?php echo $module->config['meta']['version']; ?>';
+  const currentVersion = '<?php echo $module->version; ?>';
   const txtVersion1 = '<?php echo $LANG['version1']; ?>';
   const txtVersion2 = '<?php echo $LANG['version2']; ?>';
   const txtVersion3 = '<?php echo $LANG['version3']; ?>';
   const txtVersion4 = '<?php echo $LANG['version4']; ?>';
+  const eplasedTime = '<?php echo $LANG['eplasedTime']; ?>';
 
   let queueTable;
   let tldTable;
@@ -887,14 +894,24 @@ $soap_exists = class_exists("SoapClient");
 
     $('.js-balance').html('<div class="loader" style="scale: 0.4"></div>');
 
-    $.post(requestUrl, userInfoRequest, function(response) {
+    const startTime = performance.now();
 
-      let style_attr = response.loggedin === true ? 'color: #4CAF50;font-weight:bold' : 'color: #F44336;font-weight:bold';
-      let icon = response.loggedin === true ? '<i class="fa fa-check"></i>' : '<i class="fa fa-exclamation-circle" aria-hidden="true"></i>';
+    $.post(requestUrl, userInfoRequest, function(response) {
+      const endTime = performance.now();
+      const responseTime = ((endTime - startTime) / 1000).toFixed(2);
+
+      let style_attr = response.loggedin === true
+          ? 'color: #4CAF50;font-weight:bold'
+          : 'color: #F44336;font-weight:bold';
+      let icon = response.loggedin === true
+          ? '<i class="fa fa-check"></i>'
+          : '<i class="fa fa-exclamation-circle" aria-hidden="true"></i>';
 
       $('.js-balance').attr('style', style_attr);
-      $('.js-balance').html('<span>'+icon+' '+response.message+'</span>');
+      $('.js-balance').html('<span>' + icon + ' ' + response.message + '</span>');
 
+      let timeColor = responseTime < 1 ? 'green' : responseTime < 3 ? 'orange' : 'red';
+      $('.connection-time').html('<span style="color:' + timeColor + ';">' + eplasedTime.replace(':time:', responseTime) + '</span>');
     }, 'json');
   }
 
@@ -954,7 +971,6 @@ $soap_exists = class_exists("SoapClient");
       initializeImportTab();
     } else if (tabName === 'tlds') {
       initializeTldImportTab();
-      //tldTable.columns.adjust().draw();
     }
   }
 
@@ -1026,7 +1042,7 @@ $soap_exists = class_exists("SoapClient");
       if ('V' + currentVersion !== latestVersion) {
             versionText = `
               <p class="out-of-date"><i class="fas fa-minus-circle"></i> ${txtVersion1} <strong>V${currentVersion}</strong>.
-              <br>Sunucudaki son versiyon: <strong>${latestVersion}</strong>${txtVersion2}</p>
+              <br>Sunucudaki son versiyon: <strong>${latestVersion}</strong> ${txtVersion2}</p>
               <a href="${latestUrl}" target="_blank">${txtVersion3}</a>`;
           } else {
             versionText = `

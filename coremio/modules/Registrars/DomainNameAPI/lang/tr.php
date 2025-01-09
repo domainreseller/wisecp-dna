@@ -77,6 +77,5 @@ return [
     'numofTLDNotSynced'    => 'Hata',
     'numofTLDNotSyncedTxt' => 'Bir hata oluştu. Lütfen tekrar deneyin.',
     'stillProcessing'      => 'İşlem devam ediyor...',
-
-
+    'eplasedTime'          => 'Api bağlantısı :time: saniye sürdü',
 ];

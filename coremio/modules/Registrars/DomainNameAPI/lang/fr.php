@@ -77,5 +77,5 @@ return [
     'numofTLDNotSynced'    => 'Erreur',
     'numofTLDNotSyncedTxt' => 'Une erreur s\'est produite. Veuillez réessayer.',
     'stillProcessing'      => 'Le processus est toujours en cours...',
-
+    'eplasedTime'          => 'La connexion API a pris :time: secondes',
 ];

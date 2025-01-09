@@ -77,5 +77,5 @@ return [
     'numofTLDNotSynced'    => 'Error',
     'numofTLDNotSyncedTxt' => 'An error occurred. Please try again.',
     'stillProcessing'      => 'Process is still ongoing...',
-
+    'eplasedTime'          => 'API connection took :time: seconds',
 ];

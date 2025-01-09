@@ -76,4 +76,5 @@ return [
     'numofTLDNotSynced'    => 'خطأ',
     'numofTLDNotSyncedTxt' => 'حدث خطأ. يرجى المحاولة مرة أخرى.',
     'stillProcessing'      => 'العملية مستمرة...',
+    'eplasedTime'          => 'استغرقت اتصال API :time: ثانية',
 ];
