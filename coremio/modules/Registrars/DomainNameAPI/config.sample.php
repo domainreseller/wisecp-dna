@@ -15,6 +15,10 @@ return [
         'whidden-currency' => 4,
         'cost-currency'    => 4,
         'adp'              => true,
-        'exclude'          => ''
+        'exclude'          => '',
+        'dom-cache-ttl'    => 1024,
+        'periodic-sync'    => false,
+        'sync-count'       => 5,
+        'sync-delay'       => 86400
     ],
 ];

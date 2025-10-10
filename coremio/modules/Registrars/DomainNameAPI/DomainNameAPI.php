@@ -601,7 +601,7 @@ class DomainNameAPI {
         if ($domainDetail["result"] != "OK") {
             $this->invalidateCache($domainCacheKey);
             $this->error = $domainDetail["error"]["Details"];
-            return true;
+            return false;
         }
 
         if ($cns["ip"] != $ip) {
@@ -913,7 +913,20 @@ class DomainNameAPI {
         },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
 
         if ($OrderDetails["result"] != "OK") {
-            $this->error = $OrderDetails["error"]["Details"];
+            // Alan adı bulunamadıysa veya başka hesaba transfer edildiyse
+            $error_message = $OrderDetails["error"]["Message"] ?? '';
+            $error_details = $OrderDetails["error"]["Details"] ?? '';
+
+            // Transfer edilmiş alan adı kontrolü
+            if (stripos($error_message, 'not found') !== false ||
+                stripos($error_details, 'not found') !== false ||
+                stripos($error_details, 'ERR_DOMAIN_NOT_FOUND') !== false) {
+                return [
+                    'status' => 'transferred'
+                ];
+            }
+
+            $this->error = $error_details;
             return false;
         }
 
@@ -943,8 +956,22 @@ class DomainNameAPI {
         $OrderDetails =$this->rememberCache(self::CACHE_KEY_SYNC_PREFIX.trim($domain),function () use ($domain){
             return $this->api->getDetails($domain);
         },rand((int)$this->domainCacheTTL*0.8,(int)$this->domainCacheTTL*2.5));
+
         if ($OrderDetails["result"] != "OK") {
-            $this->error = $OrderDetails["error"]["Details"];
+            // Alan adı bulunamadıysa veya başka hesaba transfer edildiyse
+            $error_message = $OrderDetails["error"]["Message"] ?? '';
+            $error_details = $OrderDetails["error"]["Details"] ?? '';
+
+            // Transfer edilmiş alan adı kontrolü
+            if (stripos($error_message, 'not found') !== false ||
+                stripos($error_details, 'not found') !== false ||
+                stripos($error_details, 'ERR_DOMAIN_NOT_FOUND') !== false) {
+                return [
+                    'status' => 'transferred'
+                ];
+            }
+
+            $this->error = $error_details;
             return false;
         }
 
@@ -1351,7 +1378,7 @@ class DomainNameAPI {
         }
         
         $totalDomains = Models::$init->db->select("COUNT(id) AS total")->from("users_products")
-            ->where("module", "=", "DomainNameApi", "&&")
+            ->where("module", "=", "DomainNameAPI", "&&")
             ->where("type", "=", "domain")
             ->build() ? Models::$init->db->getObject()->total : 0;
         
@@ -1359,7 +1386,7 @@ class DomainNameAPI {
             $totalDomains = 2000;
         }
 
-        foreach(range(0,$this->syncCount) as $syncKey){
+        foreach(range(1,$this->syncCount) as $syncKey){
 
             sleep(2);
 
@@ -1445,7 +1472,7 @@ class DomainNameAPI {
         $stmt = Models::$init->db->select("id,name,options")->from("users_products");
 
         $stmt->where("status", "=", "active", "&&");
-        $stmt->where("module", "=", "DomainNameApi", "&&");
+        $stmt->where("module", "=", "DomainNameAPI", "&&");
         $stmt->where("type", "=", "domain" , "&&");
         $stmt->where("(");
         $stmt->where('JSON_EXTRACT(options, "$.next_check")', "IS NULL", "", "||");
@@ -1770,6 +1797,7 @@ class DomainNameAPI {
                         'type'     => 'register',
                         'amount'   => $register_sale,
                         'cid'      => $tld_cid,
+                        'setup'    => 0,
                     ]);
 
 
@@ -1779,6 +1807,7 @@ class DomainNameAPI {
                         'type'     => 'renewal',
                         'amount'   => $renewal_sale,
                         'cid'      => $tld_cid,
+                        'setup'    => 0,
                     ]);
 
 
@@ -1788,6 +1817,7 @@ class DomainNameAPI {
                         'type'     => 'transfer',
                         'amount'   => $transfer_sale,
                         'cid'      => $tld_cid,
+                        'setup'    => 0,
                     ]);
                 }
 
