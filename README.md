@@ -12,6 +12,12 @@
 
 Bu modül, WiseCP için geliştirilmiş bir 'domainnameapi.com' entegrasyonudur.
 
+## 📦 İndirme — her zaman Releases kullanın!
+
+⬇️ **En güncel ve test edilmiş sürümü buradan indirin: https://github.com/domainreseller/wisecp-dna/releases/latest**
+
+> ⚠️ Yeşil **Code → Download ZIP** düğmesini **kullanmayın** — bu düğme ham geliştirme dalını indirir. Release paketleri sürümlenmiş, test edilmiş ve canlı kullanıma hazırdır.
+
 ## Gereksinimler
 
 - WiseCP'nin 3 ve üzeri sürümü gerekmektedir.
@@ -37,6 +43,20 @@ Bu modül, WiseCP için geliştirilmiş bir 'domainnameapi.com' entegrasyonudur.
 
 1. Bayi kullanıcı adını ve şifresini girin.
 2. "Kaydet" düğmesine tıklayın.
+
+## 🔑 API Bilgileri — Kullanıcı Adı/Şifre mi, Reseller ID/API Key mi?
+
+Her ikisi de desteklenir — bilgileri modüldeki aynı iki alana girin; modül hangi API'nin kullanılacağını otomatik olarak algılar:
+
+| Elinizdeki bilgi | "Kullanıcı Adı" alanı | "Şifre" alanı | Kullanılan API |
+|---|---|---|---|
+| **Yeni panel bilgileri** (önerilen) | Reseller ID — `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` formatında UUID | API Key | REST |
+| **Eski (legacy) bilgiler** | API kullanıcı adı | API şifresi | SOAP |
+
+> 💡 **Reseller ID** ve **API Key** bilgilerinizi DomainNameAPI panelinizde **API Ayarları** bölümünde bulabilirsiniz.
+> ⚠️ Bunlar **API bilgileridir** — panele giriş yaptığınız e-posta/şifre burada **ÇALIŞMAZ**; API Ayarları bölümündeki Reseller ID (UUID) ve API Key kullanılmalıdır.
+
+Ekstra bir yapılandırma gerekmez — kullanıcı adı alanında bir UUID varsa modül modern REST API'yi, aksi halde klasik SOAP'ı kullanır.
 
 ### Bağlantıyı Test Etme
 

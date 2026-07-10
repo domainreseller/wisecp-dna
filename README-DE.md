@@ -12,6 +12,11 @@
 
 Dieses Modul ist eine Integration von 'domainnameapi.com' für WiseCP.
 
+## 📦 Download — immer die Releases verwenden!
+
+⬇️ **Die neueste getestete Version finden Sie hier: https://github.com/domainreseller/wisecp-dna/releases/latest**
+
+> ⚠️ Verwenden Sie **nicht** den grünen Button **Code → Download ZIP** — dieser lädt den rohen Entwicklungszweig herunter. Release-Pakete sind versioniert, getestet und produktionsbereit.
 
 ## Voraussetzungen
 
@@ -37,6 +42,20 @@ Verschieben Sie den Ordner "coremio" aus dem heruntergeladenen Ordner in den Ord
 
 1. Geben Sie den Benutzernamen und das Passwort des Wiederverkäufers ein.
 2. Klicken Sie auf die Schaltfläche "Speichern".
+
+## 🔑 API-Zugangsdaten — Benutzername/Passwort oder Reseller ID/API Key?
+
+Beides wird unterstützt — tragen Sie die Daten in dieselben zwei Modulfelder ein; das Modul erkennt automatisch, welche API verwendet wird:
+
+| Sie haben | Feld "Benutzername" | Feld "Passwort" | Verwendete API |
+|---|---|---|---|
+| **Neue Panel-Zugangsdaten** (empfohlen) | Reseller ID — UUID wie `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` | API Key | REST |
+| **Alte (Legacy-)Zugangsdaten** | API-Benutzername | API-Passwort | SOAP |
+
+> 💡 Ihre **Reseller ID** und Ihren **API Key** finden Sie in Ihrem DomainNameAPI-Panel unter **API-Einstellungen**.
+> ⚠️ Dies sind **API-Zugangsdaten** — Ihre Panel-Login-E-Mail und das zugehörige Passwort funktionieren hier **nicht**.
+
+Es ist keine zusätzliche Konfiguration erforderlich — enthält das Benutzernamen-Feld eine UUID, verwendet das Modul die moderne REST-API, andernfalls klassisches SOAP.
 
 ### Verbindungstest
 

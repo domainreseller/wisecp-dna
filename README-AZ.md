@@ -12,6 +12,11 @@
 
 Bu modul, WiseCP üçün 'domainnameapi.com' inteqrasiyasıdır.
 
+## 📦 Yükləmə — həmişə Releases istifadə edin!
+
+⬇️ **Ən son test edilmiş versiyanı buradan yükləyin: https://github.com/domainreseller/wisecp-dna/releases/latest**
+
+> ⚠️ Yaşıl **Code → Download ZIP** düyməsini **istifadə etməyin** — bu düymə xam inkişaf (development) qolunu yükləyir. Release paketləri versiyalanmış, test edilmiş və istehsalata hazırdır.
 
 ## Tələblər
 
@@ -37,6 +42,20 @@ Yüklədiyiniz qovluqdakı "coremio" qovluğunu WISECP quraşdırıldığı qovl
 
 1. Bayi istifadəçi adını və şifrəsini daxil edin.
 2. "Yadda Saxla" düyməsinə klikləyin.
+
+## 🔑 API Məlumatları — İstifadəçi adı/Şifrə, yoxsa Reseller ID/API Key?
+
+Hər ikisi dəstəklənir — məlumatları modulda eyni iki sahəyə daxil edin; modul hansı API-nin istifadə olunacağını avtomatik müəyyən edir:
+
+| Sizdə olan | "İstifadəçi adı" sahəsi | "Şifrə" sahəsi | İstifadə olunan API |
+|---|---|---|---|
+| **Yeni panel məlumatları** (tövsiyə olunur) | Reseller ID — `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` formatında UUID | API Key | REST |
+| **Köhnə (legacy) məlumatlar** | API istifadəçi adı | API şifrəsi | SOAP |
+
+> 💡 **Reseller ID** və **API Key** məlumatlarınızı DomainNameAPI panelinizdə **API Parametrləri** bölməsində tapa bilərsiniz.
+> ⚠️ Bunlar **API məlumatlarıdır** — panelə giriş üçün istifadə etdiyiniz e-poçt və şifrə burada **işləməyəcək**.
+
+Əlavə konfiqurasiya tələb olunmur — istifadəçi adı sahəsində UUID varsa, modul müasir REST API-dən, əks halda klassik SOAP-dan istifadə edir.
 
 ### Bağlantını Test Et
 
