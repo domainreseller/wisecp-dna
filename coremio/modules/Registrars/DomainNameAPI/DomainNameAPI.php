@@ -687,6 +687,185 @@ class DomainNameAPI {
     }
 
     /**
+     * Resolve the managed domain from the order context WISECP sets via
+     * set_order() before calling the DNS record methods.
+     * @return string
+     */
+    private function dnsDomain()
+    {
+        $domain = $this->order["options"]["domain"] ?? '';
+        return function_exists('idn_to_ascii')
+            ? idn_to_ascii($domain, 0, INTL_IDNA_VARIANT_UTS46) ?: $domain
+            : $domain;
+    }
+
+    /**
+     * Turn a gateway FQDN record name ("www.example.com.") into the relative
+     * host WISECP shows ("www"); the apex becomes "@".
+     * @param string $fqdn
+     * @param string $domain
+     * @return string
+     */
+    private function dnsRelativeHost($fqdn, $domain)
+    {
+        $fqdn   = rtrim((string) $fqdn, '.');
+        $domain = rtrim((string) $domain, '.');
+        if (strcasecmp($fqdn, $domain) === 0) {
+            return '@';
+        }
+        $suffix = '.' . $domain;
+        if (strlen($fqdn) > strlen($suffix) && strcasecmp(substr($fqdn, -strlen($suffix)), $suffix) === 0) {
+            return substr($fqdn, 0, -strlen($suffix));
+        }
+        return $fqdn;
+    }
+
+    /**
+     * Normalize a WISECP host to what the gateway expects as the record name:
+     * a RELATIVE label (the gateway appends the zone domain itself). Apex ("@",
+     * empty, or the domain) becomes an empty string.
+     * @param string $name
+     * @param string $domain
+     * @return string
+     */
+    private function dnsApiHost($name, $domain)
+    {
+        $name = trim((string) $name);
+        if ($name === '' || $name === '@' || strcasecmp(rtrim($name, '.'), $domain) === 0) {
+            return '';
+        }
+        return $this->dnsRelativeHost($name, $domain);
+    }
+
+    /**
+     * Build the stored FQDN (with trailing dot) used to identify a record for
+     * edit/delete, matching how the gateway returns names.
+     */
+    private function dnsRecordName($host, $domain)
+    {
+        return $host === '' ? $domain . '.' : $host . '.' . $domain . '.';
+    }
+
+    /**
+     * Compose the gateway record content, folding MX priority into the value.
+     */
+    private function dnsContent($type, $value, $priority)
+    {
+        $value = trim((string) $value);
+        if (strtoupper($type) === 'MX' && $priority !== '' && $priority !== null && strtoupper((string) $priority) !== 'N/A') {
+            return $priority . ' ' . $value;
+        }
+        return $value;
+    }
+
+    /**
+     * List DNS zone resource records for the managed domain.
+     * @return array|false
+     */
+    public function getDnsRecords()
+    {
+        $this->set_credentials();
+        $domain = $this->dnsDomain();
+
+        $result = $this->api->GetResourceRecords($domain);
+        if ($result["result"] != "OK") {
+            $this->error = $result["error"]["Details"];
+            return false;
+        }
+
+        $records = [];
+        $i       = 0;
+        foreach ($result["data"]["records"] as $rec) {
+            $type = strtoupper($rec["Type"]);
+            if (in_array($type, ['SOA', 'NS'])) {
+                continue;
+            }
+
+            $value    = rtrim((string) $rec["Content"], '.');
+            $priority = '';
+            if ($type === 'MX') {
+                $parts = preg_split('/\s+/', trim($rec["Content"]), 2);
+                if (count($parts) === 2) {
+                    $priority = $parts[0];
+                    $value    = rtrim($parts[1], '.');
+                }
+            }
+
+            $records[] = [
+                'identity' => ++$i,
+                'type'     => $type,
+                'name'     => $this->dnsRelativeHost($rec["Name"], $domain),
+                'value'    => $value,
+                'ttl'      => (int) $rec["TTL"],
+                'priority' => $priority,
+            ];
+        }
+
+        return $records;
+    }
+
+    /**
+     * Add a DNS zone resource record.
+     * @return bool
+     */
+    public function addDnsRecord($type, $name, $value, $ttl, $priority)
+    {
+        $this->set_credentials();
+        $domain  = $this->dnsDomain();
+        $host    = $this->dnsApiHost($name, $domain);
+        $content = $this->dnsContent($type, $value, $priority);
+
+        $result = $this->api->AddResourceRecord($domain, $host, strtoupper($type), $content, (int) $ttl ?: 3600);
+        if ($result["result"] != "OK") {
+            $this->error = $result["error"]["Details"];
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Update an existing DNS zone resource record (identified by name + type).
+     * @return bool
+     */
+    public function updateDnsRecord($type, $name, $value, $identity, $ttl, $priority)
+    {
+        $this->set_credentials();
+        $domain     = $this->dnsDomain();
+        $host       = $this->dnsApiHost($name, $domain);
+        $content    = $this->dnsContent($type, $value, $priority);
+        $recordName = $this->dnsRecordName($host, $domain);
+
+        $result = $this->api->EditResourceRecord($domain, $recordName, $host, strtoupper($type), $content, (int) $ttl ?: 3600);
+        if ($result["result"] != "OK") {
+            $this->error = $result["error"]["Details"];
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Delete a DNS zone resource record.
+     * @return bool
+     */
+    public function deleteDnsRecord($type, $name, $value, $identity)
+    {
+        $this->set_credentials();
+        $domain     = $this->dnsDomain();
+        $host       = $this->dnsApiHost($name, $domain);
+        $recordName = $this->dnsRecordName($host, $domain);
+
+        $result = $this->api->DeleteResourceRecord($domain, $recordName, trim((string) $value), strtoupper($type));
+        if ($result["result"] != "OK") {
+            $this->error = $result["error"]["Details"];
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Get Whois Privacy
      * @param array $params
      * @return string
