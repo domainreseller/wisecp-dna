@@ -18,10 +18,13 @@ if ($user_id < 1 || strlen($domain) < 3) {
 
 $resp = $module->import_domain([$domain => ['user_id' => $user_id]]);
 
+$hasError = !empty($resp);
 
 echo Utility::jencode([
-    'status'  => empty($resp) ? "successful" : "error",
-    'message' => empty($resp) ? $lang["success3"] : $lang["error9"],
+    'status'  => $hasError ? "error" : "successful",
+    // On failure, include the real reason returned by import_domain instead of
+    // only the generic error text, so the user sees the actual error type.
+    'message' => $hasError ? $lang["error9"] . ': ' . implode(' | ', (array)$resp) : $lang["success3"],
     'data'    => $resp
 ]);
 

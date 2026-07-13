@@ -1294,7 +1294,9 @@ class DomainNameAPI {
             ]);
 
             if (!$info){
-                $results[$domain] = 'domain info not found';
+                // Surface the real API error (set by get_info) instead of a
+                // generic string, so the import UI shows why it actually failed.
+                $results[$domain] = $this->error ?: 'domain info not found';
                 continue;
             }
 
@@ -1384,6 +1386,11 @@ class DomainNameAPI {
         }
 
         if ($imports) {
+            // Freshly imported domains now have an order; drop the cached import
+            // list pages and per-domain user_info so the list reflects them
+            // immediately instead of serving stale "not imported" rows.
+            $this->invalidateCache([self::CACHE_KEY_DOMAINSDT_PREFIX, self::CACHE_KEY_USER_INFO_PREFIX]);
+
             $adata = UserManager::LoginData("admin");
             User::addAction($adata["id"], "alteration", "domain-imported", [
                 'module'   => $config["meta"]["name"],
@@ -1953,7 +1960,11 @@ class DomainNameAPI {
         }
 
         foreach ($invalidations as $k => $v) {
-             $cache_key = self::CACHE_KEY_PREFIX . substr($v, 0, 10);
+             // Mirror the sanitization rememberCache() applies when building the
+             // stored name; otherwise the LIKE prefix never matches keys that
+             // contain stripped characters (e.g. "_"/".") and nothing is deleted.
+             $keyUtf    = preg_replace('/[^A-Za-z0-9\-]/', '', $v);
+             $cache_key = self::CACHE_KEY_PREFIX . substr($keyUtf, 0, 10);
              Models::$init->db->delete(self::CACHE_TABLE)->where("name", "LIKE", "{$cache_key}%")->run();
         }
 

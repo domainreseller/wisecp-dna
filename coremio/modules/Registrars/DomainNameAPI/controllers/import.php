@@ -15,9 +15,16 @@ if (!$data || !is_array($data)) {
 $results = $module->import_domain($data);
 
 if (!empty($results)) {
+    // Build "domain — reason" pairs so the failure type is visible per domain
+    // rather than surfacing only the generic import-failed text.
+    $details = [];
+    foreach ($results as $failedDomain => $reason) {
+        $details[] = $failedDomain . ' — ' . $reason;
+    }
+
     die(Utility::jencode([
         'status'  => "error",
-        'message' => $lang["error9"],
+        'message' => $lang["error9"] . ': ' . implode(' | ', $details),
         'data'    => $results,
     ]));
 }
