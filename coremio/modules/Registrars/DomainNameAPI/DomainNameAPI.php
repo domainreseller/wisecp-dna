@@ -57,6 +57,15 @@ class DomainNameAPI {
     const CACHE_KEY_DOMAINSDT_PREFIX = 'domainsdt_';
     const CACHE_KEY_USER_INFO_PREFIX = 'user_info_short_';
 
+    const PENDING_STATUSES = [
+        'waitingfordocument',
+        'waitingforregistration',
+        'confirmationemailsend',
+        'preregistration',
+        'pendinghold',
+        'modificationpending',
+    ];
+
     function __construct($external = []) {
 
 
@@ -377,7 +386,11 @@ class DomainNameAPI {
         $status  = "SUCCESS";
         $message = NULL;
 
-        if($response["data"]["Status"] == "waitingfordocument"){
+        // BUG-10456: API "Success" dönse bile alan adı doküman/onay beklerken
+        // aktif değildir. Karşılaştırma küçük harfle yazıldığı ("waitingfordocument")
+        // ama API "WaitingForDocument" gönderdiği için bu kontrol hiç tetiklenmiyor,
+        // müşteriye "tescil edildi" bildirimi gidiyordu.
+        if ($this->isPendingStatus($response["data"]["Status"] ?? '')) {
             $status  = "FAIL";
             $message = $this->lang["error12"];
         }
@@ -1154,6 +1167,16 @@ class DomainNameAPI {
             $return_data["status"] = "expired";
         } elseif ($currentstatus == "TransferredOut") {
             $return_data["status"] = "transferred";
+        } elseif ($this->isPendingStatus($currentstatus)) {
+
+            $return_data["status"] = "unknown";
+
+            Modules::save_log(self::LOGGING_CONFIG_NAME, __CLASS__, ucfirst(__FUNCTION__), [
+                'domain' => $domain,
+            ], [
+                'status'  => $currentstatus,
+                'message' => $this->lang["error12"],
+            ]);
         }
 
         return $return_data;
@@ -1187,32 +1210,35 @@ class DomainNameAPI {
 
         if ($currentstatus == "Active") {
             $dns = [];
-/*
-            if (isset($params["ns1"]) && $params["ns1"]) {
-                $dns[] = $params["ns1"];
-            }
-            if (isset($params["ns2"]) && $params["ns2"]) {
-                $dns[] = $params["ns2"];
-            }
-            if (isset($params["ns3"]) && $params["ns3"]) {
-                $dns[] = $params["ns3"];
-            }
-            if (isset($params["ns4"]) && $params["ns4"]) {
-                $dns[] = $params["ns4"];
-            }
 
-            $this->ModifyDns(['domain' => $domain], $dns);
-            $this->ModifyWhois(['domain' => $domain], $params["whois"]);
-*/
 
             $return_data["status"] = "active";
         } elseif ($currentstatus == "Expired") {
             $return_data["status"] = "expired";
         } elseif ($currentstatus == "TransferredOut") {
             $return_data["status"] = "transferred";
+        } elseif ($this->isPendingStatus($currentstatus)) {
+            // BUG-10456: transfer sonrası alan adı hâlâ doküman/onay bekliyor olabilir; aktif saymadan loga yaz.
+            $return_data["status"] = "unknown";
+
+            Modules::save_log(self::LOGGING_CONFIG_NAME, __CLASS__, ucfirst(__FUNCTION__), [
+                'domain' => $domain,
+            ], [
+                'status'  => $currentstatus,
+                'message' => $this->lang["error12"],
+            ]);
         }
 
         return $return_data;
+    }
+
+    /**
+
+     * @param string|false $status
+     * @return bool
+     */
+    private function isPendingStatus($status) {
+        return in_array(strtolower(trim((string)$status)), self::PENDING_STATUSES, true);
     }
 
     public function get_info($params = []) {
