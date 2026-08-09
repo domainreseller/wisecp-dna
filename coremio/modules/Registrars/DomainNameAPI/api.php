@@ -254,6 +254,24 @@ class DomainNameAPI_PHPLibrary
     public function deleteResourceRecordSet($domainName, $name, $type, $apply = true, $knownValue = '') { return $this->client->deleteResourceRecordSet($domainName, $name, $type, $apply, $knownValue); }
 
     /**
+     * Add one value to a record set without disturbing the others.
+     * @see DNARest::addResourceRecordValue()
+     */
+    public function addResourceRecordValue($domainName, $name, $type, $value, $ttl = null, $apply = true) { return $this->client->addResourceRecordValue($domainName, $name, $type, $value, $ttl, $apply); }
+
+    /**
+     * Remove one value from a record set, leaving the rest in place.
+     * @see DNARest::removeResourceRecordValue()
+     */
+    public function removeResourceRecordValue($domainName, $name, $type, $value, $apply = true) { return $this->client->removeResourceRecordValue($domainName, $name, $type, $value, $apply); }
+
+    /**
+     * Swap one value of a record set for another.
+     * @see DNARest::replaceResourceRecordValue()
+     */
+    public function replaceResourceRecordValue($domainName, $name, $type, $oldValue, $newValue, $ttl = null, $apply = true) { return $this->client->replaceResourceRecordValue($domainName, $name, $type, $oldValue, $newValue, $ttl, $apply); }
+
+    /**
      * Read URL forwarding configuration.
      * @see DNARest::getForwarding()
      */

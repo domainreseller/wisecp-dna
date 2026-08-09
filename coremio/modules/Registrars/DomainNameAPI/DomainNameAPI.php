@@ -772,6 +772,72 @@ class DomainNameAPI {
     }
 
     /**
+     * Strip the quoting the gateway adds to TXT values, so the panel shows what
+     * the customer actually typed (matching the WISECP sample module, which
+     * lists TXT unquoted).
+     */
+    private function dnsDisplayValue($type, $content)
+    {
+        $content = trim((string) $content);
+        if (strtoupper($type) === 'TXT' && strlen($content) > 1
+            && $content[0] === '"' && substr($content, -1) === '"') {
+            return substr($content, 1, -1);
+        }
+        return $content;
+    }
+
+    /**
+     * A stable identity for a zone record.
+     *
+     * The gateway has no per-record id — a record IS its name+type+value — so
+     * the identity is derived from those three. It has to be deterministic:
+     * WISECP hands the identity from the listing straight back to update/delete,
+     * and those need to find the exact stored value again. A positional counter
+     * would point at the wrong record as soon as the zone changed.
+     *
+     * @return string Numeric string, matching the sample module's id shape.
+     */
+    private function dnsIdentity($name, $type, $content)
+    {
+        return sprintf('%u', crc32(strtolower($name) . '|' . strtoupper($type) . '|' . trim((string) $content)));
+    }
+
+    /**
+     * Resolve an identity coming back from WISECP to the record it was made
+     * from, so edit/delete know which value of a multi-value set to touch.
+     *
+     * @return array|null ['name' => relative host, 'type' => ..., 'content' => stored value]
+     */
+    private function dnsFindByIdentity($identity)
+    {
+        $domain = $this->dnsDomain();
+        $result = $this->api->GetResourceRecords($domain);
+        if ($result["result"] != "OK") {
+            $this->error = $result["error"]["Details"];
+            return null;
+        }
+
+        foreach ($result["data"]["records"] as $rec) {
+            $type = strtoupper($rec["Type"]);
+            if (in_array($type, ['SOA', 'NS'])) {
+                continue;
+            }
+            $host = $this->dnsRelativeHost($rec["Name"], $domain);
+            if ((string) $this->dnsIdentity($host, $type, $rec["Content"]) === (string) $identity) {
+                // The identity is built from the display host ("@" for the apex);
+                // the caller needs the API host ("") to pass back to the library.
+                return [
+                    'name'    => $this->dnsApiHost($host, $domain),
+                    'type'    => $type,
+                    'content' => (string) $rec["Content"],
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * List DNS zone resource records for the managed domain.
      * @return array|false
      */
@@ -787,14 +853,14 @@ class DomainNameAPI {
         }
 
         $records = [];
-        $i       = 0;
         foreach ($result["data"]["records"] as $rec) {
             $type = strtoupper($rec["Type"]);
             if (in_array($type, ['SOA', 'NS'])) {
                 continue;
             }
 
-            $value    = rtrim((string) $rec["Content"], '.');
+            $host     = $this->dnsRelativeHost($rec["Name"], $domain);
+            $value    = $this->dnsDisplayValue($type, rtrim((string) $rec["Content"], '.'));
             $priority = '';
             if ($type === 'MX') {
                 $parts = preg_split('/\s+/', trim($rec["Content"]), 2);
@@ -805,9 +871,9 @@ class DomainNameAPI {
             }
 
             $records[] = [
-                'identity' => ++$i,
+                'identity' => $this->dnsIdentity($host, $type, $rec["Content"]),
                 'type'     => $type,
-                'name'     => $this->dnsRelativeHost($rec["Name"], $domain),
+                'name'     => $host,
                 'value'    => $value,
                 'ttl'      => (int) $rec["TTL"],
                 'priority' => $priority,
@@ -819,6 +885,12 @@ class DomainNameAPI {
 
     /**
      * Add a DNS zone resource record.
+     *
+     * The gateway stores a name+type as one set and replaces it wholesale on
+     * every write, so adding a second MX (or a second A for the same host) has
+     * to merge with what is already there — AddResourceRecordValue does that.
+     * A plain add would have dropped the sibling records.
+     *
      * @return bool
      */
     public function addDnsRecord($type, $name, $value, $ttl, $priority)
@@ -828,7 +900,7 @@ class DomainNameAPI {
         $host    = $this->dnsApiHost($name, $domain);
         $content = $this->dnsContent($type, $value, $priority);
 
-        $result = $this->api->AddResourceRecord($domain, $host, strtoupper($type), $content, (int) $ttl ?: 3600);
+        $result = $this->api->AddResourceRecordValue($domain, $host, strtoupper($type), $content, (int) $ttl ?: null);
         if ($result["result"] != "OK") {
             $this->error = $result["error"]["Details"];
             return false;
@@ -838,18 +910,48 @@ class DomainNameAPI {
     }
 
     /**
-     * Update an existing DNS zone resource record (identified by name + type).
+     * Update an existing DNS zone resource record.
+     *
+     * The identity tells us which value of the set is being edited; only that
+     * one is swapped, so the other values under the same name+type survive.
+     *
      * @return bool
      */
     public function updateDnsRecord($type, $name, $value, $identity, $ttl, $priority)
     {
         $this->set_credentials();
-        $domain     = $this->dnsDomain();
-        $host       = $this->dnsApiHost($name, $domain);
-        $content    = $this->dnsContent($type, $value, $priority);
-        $recordName = $this->dnsRecordName($host, $domain);
+        $domain  = $this->dnsDomain();
+        $host    = $this->dnsApiHost($name, $domain);
+        $content = $this->dnsContent($type, $value, $priority);
 
-        $result = $this->api->EditResourceRecord($domain, $recordName, $host, strtoupper($type), $content, (int) $ttl ?: 3600);
+        $current = $this->dnsFindByIdentity($identity);
+        if (!$current) {
+            if (!$this->error) {
+                $this->error = 'DNS record not found.';
+            }
+            return false;
+        }
+
+        // Renaming or retyping a record is a move: drop the old one, then add
+        // the new one, so neither set loses its other values.
+        if (strcasecmp($current['name'], $host) !== 0 || strcasecmp($current['type'], $type) !== 0) {
+            $removed = $this->api->RemoveResourceRecordValue($domain, $current['name'], $current['type'], $current['content']);
+            if ($removed["result"] != "OK") {
+                $this->error = $removed["error"]["Details"];
+                return false;
+            }
+
+            $added = $this->api->AddResourceRecordValue($domain, $host, strtoupper($type), $content, (int) $ttl ?: null);
+            if ($added["result"] != "OK") {
+                $this->error = $added["error"]["Details"];
+                return false;
+            }
+
+            return true;
+        }
+
+        $result = $this->api->ReplaceResourceRecordValue($domain, $host, strtoupper($type),
+            $current['content'], $content, (int) $ttl ?: null);
         if ($result["result"] != "OK") {
             $this->error = $result["error"]["Details"];
             return false;
@@ -860,16 +962,28 @@ class DomainNameAPI {
 
     /**
      * Delete a DNS zone resource record.
+     *
+     * Removes only this value; the set's remaining values are written back. A
+     * bare delete would have taken the whole name+type with it.
+     *
      * @return bool
      */
     public function deleteDnsRecord($type, $name, $value, $identity)
     {
         $this->set_credentials();
-        $domain     = $this->dnsDomain();
-        $host       = $this->dnsApiHost($name, $domain);
-        $recordName = $this->dnsRecordName($host, $domain);
+        $domain = $this->dnsDomain();
+        $host   = $this->dnsApiHost($name, $domain);
 
-        $result = $this->api->DeleteResourceRecord($domain, $recordName, trim((string) $value), strtoupper($type));
+        // Prefer the stored value behind the identity — what the panel shows is
+        // normalized (TXT unquoted, MX priority split out) and would not match.
+        $current = $this->dnsFindByIdentity($identity);
+        $content = $current ? $current['content'] : $this->dnsContent($type, $value, '');
+        if ($current) {
+            $host = $current['name'];
+            $type = $current['type'];
+        }
+
+        $result = $this->api->RemoveResourceRecordValue($domain, $host, strtoupper($type), $content);
         if ($result["result"] != "OK") {
             $this->error = $result["error"]["Details"];
             return false;
