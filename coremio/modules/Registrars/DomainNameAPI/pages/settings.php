@@ -11,21 +11,6 @@ $soap_exists = class_exists("SoapClient");
 $periodicSync = $module->periodicSync;
 $syncCountList = $module->syncCountList;
 $syncDelayList = $module->syncDelayList;
-
-// Installs created before DNS support shipped have no 'dns-record-types' in
-// their config.php, and WISECP only ever reads that file — there is no merge
-// with config.sample.php. Without the list the DNS type dropdown renders empty
-// and every record operation is refused with "Unknown dns type", so top it up
-// the first time an admin opens this page.
-if (empty($CONFIG["settings"]["dns-record-types"]) && is_array($CONFIG["settings"] ?? null)) {
-    $CONFIG["settings"]["dns-record-types"] = \DomainNameApi\DNARest::ZONE_RECORD_TYPES;
-
-    $configFile = dirname(__DIR__) . DS . "config.php";
-    if (is_writable($configFile)) {
-        FileManager::file_write($configFile, Utility::array_export($CONFIG, ['pwith' => true]));
-        $module->config = $CONFIG;
-    }
-}
 ?>
 
 

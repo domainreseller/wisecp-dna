@@ -41,6 +41,17 @@ class DomainNameAPI {
         259200, // 72 hours
     ];
 
+    /**
+     * Zone record types the gateway can store.
+     *
+     * Kept as a literal here rather than read from DNARest::ZONE_RECORD_TYPES:
+     * arrangeModuleConfig() runs before api.php is included, so the library
+     * class does not exist yet at that point. The two lists must stay in sync.
+     */
+    const DNS_RECORD_TYPES = [
+        'A', 'AAAA', 'ALIAS', 'CAA', 'CNAME', 'DS', 'MX', 'NAPTR', 'PTR', 'SRV', 'TLSA', 'TXT',
+    ];
+
     const DEFAULT_CACHE_TTL = 3600;
     const CACHE_KEY_PREFIX    = 'DNA-';
     const CACHE_TABLE = 'mod_dna_cache_elements';
@@ -120,18 +131,36 @@ class DomainNameAPI {
     private function arrangeModuleConfig() {
         $config_file = __DIR__ . DS . "config.php";
         $sample_file = __DIR__ . DS . "config.sample.php";
-        
+
         // Eğer config.php yoksa config.sample.php'den oluştur
         if (!file_exists($config_file) && file_exists($sample_file)) {
             copy($sample_file, $config_file);
         }
-        
+
         // Mevcut config'i al
         $this->config = Modules::Config(self::LOGGING_CONFIG_NAME, __CLASS__);
-        
+
+        $needsWrite = false;
+
         // Version değişmişse güncelle ve kaydet
         if(!isset($this->config["meta"]["version"]) || $this->config["meta"]["version"] !== $this->version) {
             $this->config["meta"]["version"] = $this->version;
+            $needsWrite = true;
+        }
+
+        // Installs predating DNS support have no 'dns-record-types' in their
+        // config.php, and WISECP never merges config.sample.php over it. The DNS
+        // template does a bare foreach on this key, so a missing list is a fatal
+        // on the customer's DNS tab — and the controllers reject every record
+        // operation whose type is not in it. Topping it up here means the fix
+        // lands the moment the module is instantiated, without waiting for an
+        // admin to open the settings page.
+        if (empty($this->config["settings"]["dns-record-types"])) {
+            $this->config["settings"]["dns-record-types"] = self::DNS_RECORD_TYPES;
+            $needsWrite = true;
+        }
+
+        if ($needsWrite) {
             $array_export = Utility::array_export($this->config, ['pwith' => true]);
             FileManager::file_write($config_file, $array_export);
         }
