@@ -7,7 +7,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
  * @package    coremio/modules/Registrars/DomainNameAPI
 
 
- * @version    2.0.14
+ * @version    2.0.15
  * @since      File available since Release 7.0.0
  * @license    MIT License https://opensource.org/licenses/MIT
  * @link       https://visecp.com/
@@ -18,7 +18,7 @@ use DomainNameApi\DomainNameAPI_PHPLibrary;
 class DomainNameAPI {
 
 
-    public $version = "2.0.14";
+    public $version = "2.0.15";
 
 
     /** @var bool|DomainNameAPI_PHPLibrary  */
