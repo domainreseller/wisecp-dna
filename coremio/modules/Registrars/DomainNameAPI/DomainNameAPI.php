@@ -1308,7 +1308,7 @@ class DomainNameAPI {
             $return_data["status"] = "active";
         } elseif ($currentstatus == "Expired") {
             $return_data["status"] = "expired";
-        } elseif ($currentstatus == "TransferredOut") {
+        } elseif (in_array($currentstatus, ["TransferredOut", "Deleted", "PendingDelete"], true)) { // Domain no longer exists on this registrar (transferred out or deleted); must be cancelled. BUG-10238.
             $return_data["status"] = "transferred";
         } elseif ($this->isPendingStatus($currentstatus)) {
 
@@ -1358,7 +1358,7 @@ class DomainNameAPI {
             $return_data["status"] = "active";
         } elseif ($currentstatus == "Expired") {
             $return_data["status"] = "expired";
-        } elseif ($currentstatus == "TransferredOut") {
+        } elseif (in_array($currentstatus, ["TransferredOut", "Deleted", "PendingDelete"], true)) { // Domain no longer exists on this registrar (transferred out or deleted); must be cancelled. BUG-10238.
             $return_data["status"] = "transferred";
         } elseif ($this->isPendingStatus($currentstatus)) {
             // BUG-10456: transfer sonrası alan adı hâlâ doküman/onay bekliyor olabilir; aktif saymadan loga yaz.
