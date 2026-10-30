@@ -445,6 +445,20 @@ class DomainNameAPI {
      * @return bool
      */
     public function renewal($params = [], $domain = '', $sld = '', $tld = '', $year = 1, $oduedate = '', $nduedate = '') {
+        // BUG-11017: the core can hand over $domain as false; an empty name makes the gateway
+        // answer "The DomainName field is required", so fall back to the other sources first.
+        $domain = is_string($domain) ? trim($domain) : '';
+        if ($domain === '' && is_array($params) && is_string($params['domain'] ?? null)) {
+            $domain = trim($params['domain']);
+        }
+        if ($domain === '' && is_string($sld) && is_string($tld) && $sld !== '' && $tld !== '') {
+            $domain = $sld . '.' . ltrim($tld, '.');
+        }
+        if ($domain === '') {
+            $this->error = $this->lang["error2"] ?? 'Domain and extension information are not present';
+            return false;
+        }
+
         $this->set_credentials();
         $OrderDetails = $this->api->getDetails($domain);
         if ($OrderDetails["result"] != "OK") {
