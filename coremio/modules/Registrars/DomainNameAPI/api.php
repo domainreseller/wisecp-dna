@@ -13,7 +13,7 @@
  * a Reseller ID (UUID) and an API Key.
  *
  * @package DomainNameApi
- * @version 4.0.4
+ * @version 4.0.6
  */
 
 namespace DomainNameApi;
@@ -139,7 +139,7 @@ class DomainNameAPI_PHPLibrary
     /**
      * @see DNARest::checkAvailability()
      */
-    public function checkAvailability($domains, $extensions, $period, $command) { return $this->client->checkAvailability($domains, $extensions, $period, $command); }
+    public function checkAvailability($domains, $extensions, $period, $command = 'create') { return $this->client->checkAvailability($domains, $extensions, $period, $command); }
 
     /**
      * @see DNARest::getList()
