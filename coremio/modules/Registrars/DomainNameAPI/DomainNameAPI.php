@@ -178,6 +178,7 @@ class DomainNameAPI {
             return $this->api;
         }
         $this->api = new DomainNameAPI_PHPLibrary($this->username, $this->password,$this->tmode);
+        if (method_exists($this->api, 'setClientInfo')) { $this->api->setClientInfo('wisecp', $this->version); }
         return $this->api;
     }
 
@@ -197,6 +198,7 @@ class DomainNameAPI {
         $this->config["settings"]["test-mode"] = $tmode;
 
         $this->api = new DomainNameAPI_PHPLibrary($username, $password,$tmode);
+        if (method_exists($this->api, 'setClientInfo')) { $this->api->setClientInfo('wisecp', $this->version); }
     }
 
     /**
